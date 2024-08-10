@@ -1,0 +1,86 @@
+.playlist-select-container > * {
+  margin-left: 50px;
+}
+.playlist-select-container .playlist-select {
+  flex: 1 1 0px;
+  width: 350px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.playlist-select-container .song-tab {
+  flex: 0 0 70px;
+  background-color: rgb(132, 0, 66);
+  border: 1px solid white;
+  border-radius: 15px;
+}
+
+.playlist-select-container .library {
+  width: 300px;
+  height: 50px;
+  padding: 0 20px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 15px;
+}
+
+.playlist-select-container .youtube,
+.playlist-select-container .personal {
+  width: 300px;
+  margin-top: 15px;
+}
+
+.playlist-select-container .header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid white;
+}
+
+.playlist-select-container .header .label {
+  flex: 1 1 0px;
+}
+
+.playlist-select-container .header .sync,
+.playlist-select-container .header .add {
+  flex: 0 0 25px;
+}
+
+.playlist-select-container .playlist {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 60px;
+  padding: 0 20px;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 15px;
+  margin-top: 10px;
+}
+
+.playlist-select-container .playlist .name {
+  flex: 1 1 0px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-wrap: nowrap;
+  text-overflow: ellipsis;
+}
+
+.playlist-select-container .playlist .play {
+  flex: 0 0 35px;
+  height: 35px;
+  border-radius: 50%;
+  background-color: rgb(216, 0, 108);
+}
+
+
+.playlist-select-container .song-tab .actions-container {
+  flex: 0 0 58px;
+}
+
+.playlist-select-container .song-tab {
+  cursor: default;
+}

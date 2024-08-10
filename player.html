@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<!-- https://fonts.google.com/icons?icon.set=Material+Symbols&icon.style=Rounded&icon.size=50&icon.color=%23FFFFFF&icon.platform=web -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline Music Player</title>
+  <link rel="shortcut icon" href="images/logo.png" type="image/x-icon">
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="editor-and-queue.css">
+  <link rel="stylesheet" href="playlist.css">
+  <link rel="stylesheet" href="player.css">
+  <script src="fuse.js" defer></script>
+  <script src="player.js" defer></script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="slider-container">
+      <div class="playlist-select-container">
+        <div class="playlist-select">
+          <div class="library">View My Library &gt;</div>
+          <div class="youtube">
+            <div class="header">
+              <div class="label">Youtube</div>
+              <div class="sync"></div>
+              <div class="add"></div>
+            </div>
+            <div class="playlist">
+              <div class="name">Standard Playlist</div>
+              <div class="play"></div>
+            </div>
+          </div>
+          <div class="personal">
+            <div class="header">
+              <div class="label">Personal</div>
+              <div class="add"></div>
+            </div>
+            <div class="playlist">
+              <div class="name">Standard Playlist</div>
+              <div class="play"></div>
+            </div>
+          </div>
+        </div>
+        <div class="song-tab">
+          <div class="thumbnail-container" style="--thumbnail: url('thumbnails/_7FaMmsU8PI.webp')">
+            <div class="thumbnail-background"></div>
+            <div class="thumbnail"></div>
+          </div>
+          <div class="song-details">
+            <div class="song-title">Ashley</div>
+            <div class="song-artist">Halsey</div>
+          </div>
+          <div class="actions-container">
+            <div class="play">
+            </div>
+            <div class="actions">
+              <div class="previous"></div>
+              <div class="next"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider-1"></div>
+
+      <div class="editor-container">
+        <div class="nav">
+          <div class="to-queue">Queue &gt;</div>
+        </div>
+        <div class="editor library">
+          <div class="playlist-title-container">
+            <div class="playlist-title">
+              <div class="curl"></div>
+              <span>My Library</span>
+              <div class="curl"></div>
+            </div>
+            <div class="playlist-options">
+              <select>
+                <option value="bySong" selected>Order By Song</option>
+                <option value="byArtist">Order By Artist</option>
+              </select>
+              <div class="add"></div>
+            </div>
+          </div>
+          <div class="song-divider">
+            <div class="add"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="queue-container">
+        <div class="nav">
+          <div class="to-editor">&lt; Playlists</div>
+          <div class="jump">Jump to Playing</div>
+        </div>
+        <div class="queue">
+          <div class="manual">
+            <div class="curl"></div>
+            <span>Manual</span>
+            <div class="curl"></div>
+          </div>
+          <div class="song-divider">
+            <div class="add"></div>
+          </div>
+          <div class="auto">
+            <div class="curl"></div>
+            <span>Auto</span>
+            <div class="curl"></div>
+          </div>
+          <div class="song-divider">
+            <div class="add"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider-2"></div>
+
+      <div class="player">
+        <div class="thumbnail-container">
+          <div class="thumbnail-background"></div>
+          <div class="thumbnail"></div>
+        </div>
+        <div class="control-panel">
+          <div class="song-details">
+            <div class="song-title">Song Name</div>
+            <div class="song-artist">Artist</div>
+          </div>
+          <div class="buttons">
+            <input type="range" class="slider" min="0" max="1" step="0.001" value="0">
+            <div class="time">
+              <span class="current-time">0:00</span> / <span class="total-time">0:00</span>
+            </div>
+            <div class="controls">
+              <input type="checkbox" id="previous">
+              <label class="previous" for="previous"></label>
+              <input type="checkbox" id="pause-play">
+              <label class="pause-play active" for="pause-play"></label>
+              <input type="checkbox" id="next">
+              <label class="next" for="next"></label>
+            </div>
+          </div>
+          <div class="controls-divider"></div>
+          <div class="extra-controls">
+            <input type="checkbox" id="lyrics">
+            <label class="lyrics" for="lyrics"></label>
+            <input type="checkbox" id="tag">
+            <label class="tag" for="tag"></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="song-tab clone"></div>
+  <div class="search-container">
+    <input class="search-bar" type="text" placeholder="Please search here">
+    <div class="search-results-container">
+      <div class="search-results">
+        <div class="placeholder">Press <kbd>Esc</kbd> to cancel.</div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
