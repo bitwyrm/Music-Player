@@ -4,5 +4,4 @@ thumbnails
 library.json
 playlists.json
 internal/force-map.json
-biome.json
 *.DS_Store
