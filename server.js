@@ -1,4 +1,5 @@
 import express from "express";
+import { exec } from "node:child_process";
 import fs from "node:fs";
 import {
 	addSong,
@@ -7,8 +8,11 @@ import {
 	saveLibrary,
 } from "./internal/library-manager.js";
 import { addYoutubePlaylist, syncYoutubePlaylists } from "./internal/sync.js";
+
 const app = express();
 const { dirname } = import.meta;
+
+console.log("Initializing");
 
 if (!fs.existsSync("audios")) {
 	fs.mkdirSync("audios");
@@ -26,12 +30,17 @@ if (!fs.existsSync("library.json")) {
 }
 
 if (!fs.existsSync("playlists.json")) {
-	fs.writeFileSync("playlists.json", JSON.stringify({ youtube: [] }, null, 2));
+	fs.writeFileSync(
+		"playlists.json",
+		JSON.stringify({ youtube: [], local: [] }, null, 2),
+	);
 }
 
 if (!fs.existsSync("internal/force-map.json")) {
 	fs.writeFileSync("internal/force-map.json", JSON.stringify({}, null, 2));
 }
+
+console.log("Syncing playlists and updating library");
 
 // Auto-sync if connected to internet
 // Otherwise order library
@@ -41,33 +50,17 @@ syncYoutubePlaylists().catch((err) => {
 	saveLibrary(getLibrary());
 });
 
+console.log("Starting server");
+
 app.use(express.json());
 app.use("/audios", express.static("audios"));
 app.use("/images", express.static("images"));
 app.use("/thumbnails", express.static("thumbnails"));
+app.use("/styles", express.static("styles"));
 
-app.get("/playlists-sync", async (req, res) => {
-	try {
-		if (req?.body?.playlistId) {
-			await syncYoutubePlaylists(req.body.playlistId);
-		} else {
-			await syncYoutubePlaylists();
-		}
-		res.send("Success");
-	} catch (error) {
-		console.log(error);
-		res.status(500).send(error);
-	}
-});
-
-app.get("/library-sync", (_, res) => {
-	try {
-		saveLibrary(getLibrary());
-		res.send("Success");
-	} catch (error) {
-		console.log(error);
-		res.status(500).send(error);
-	}
+app.all("*", (req, _, next) => {
+	console.log(`---------- ${req.url}`);
+	next();
 });
 
 app.get("/song-update", (req, res) => {
@@ -81,7 +74,21 @@ app.get("/song-update", (req, res) => {
 			artist: req.body.artist,
 		};
 		saveLibrary(library);
-		res.send("Success");
+		res.sendStatus(200);
+	} catch (error) {
+		console.log(error);
+		res.status(500).send(error);
+	}
+});
+
+app.get("/playlists-sync", async (req, res) => {
+	try {
+		if (req?.body?.playlistId) {
+			await syncYoutubePlaylists(req.body.playlistId);
+		} else {
+			await syncYoutubePlaylists();
+		}
+		res.sendStatus(200);
 	} catch (error) {
 		console.log(error);
 		res.status(500).send(error);
@@ -91,7 +98,7 @@ app.get("/song-update", (req, res) => {
 app.post("/add-playlist", async (req, res) => {
 	try {
 		await addYoutubePlaylist(req.body.playlistId);
-		res.send("Added playlist successfully");
+		res.sendStatus(200);
 	} catch (error) {
 		console.log(error);
 		res.status(500).send(error);
@@ -101,7 +108,7 @@ app.post("/add-playlist", async (req, res) => {
 app.post("/add-song", async (req, res) => {
 	try {
 		await addSong(req.body.id);
-		res.send("Added song successfully.");
+		res.sendStatus(200);
 	} catch (error) {
 		console.log(error);
 		res.status(500).send(error);
@@ -112,11 +119,12 @@ app.post("/delete-song", async (req, res) => {
 	try {
 		deleteSong(req.body.id);
 
-		const logData = `${req.body.id} video deleted (${new Date().toLocaleString()}, ${Intl.DateTimeFormat().resolvedOptions().timeZone})`;
+		let logData = `${req.body.id} video deleted (${new Date().toLocaleString()}, ${Intl.DateTimeFormat().resolvedOptions().timeZone})`;
 		console.log(logData);
-		fs.appendFileSync("internal/delete-log.txt", `\n${logData}`);
+		if (fs.existsSync("internal/delete-log.txt")) logData = `\n${logData}`;
+		fs.appendFileSync("internal/delete-log.txt", logData);
 
-		res.send("Deleted song successfully.");
+		res.sendStatus(200);
 	} catch (error) {
 		console.log(error);
 		res.status(500).send(error);
@@ -130,3 +138,6 @@ app.get("/favicon.ico", (_, res) =>
 app.get("/:file", (req, res) => res.sendFile(`${dirname}/${req.params.file}`));
 
 app.listen(80);
+
+console.log("Opening localhost");
+exec("open http://localhost/player");

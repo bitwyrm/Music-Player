@@ -1,0 +1,111 @@
+.player {
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+}
+
+.player .thumbnail-container {
+  width: 300px;
+  height: 300px;
+}
+
+.player .control-panel {
+  width: 300px;
+  height: 275px;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+}
+
+.player .song-details {
+  margin: 20px 0 10px 0;
+  text-align: center;
+}
+
+.player .song-details > div {
+  overflow: hidden;
+  white-space: nowrap;
+  text-wrap: nowrap;
+  text-overflow: ellipsis;
+}
+
+.player .song-title {
+  font-size: 36px;
+}
+
+.player .song-artist {
+  margin-top: 5px;
+  color: rgb(150, 150, 150);
+  font-size: 18px;
+}
+
+.player .slider {
+  width: 300px;
+  cursor: pointer;
+  outline: none;
+}
+
+.player .time {
+  text-align: center;
+  margin: 5px 0 10px 0;
+}
+
+.player .controls,
+.player .extra-controls {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.player input[type="checkbox"] {
+  display: none;
+}
+
+.player label {
+  display: block;
+  width: 50px;
+  height: 50px;
+  box-sizing: border-box;
+  border: 3px white solid;
+  border-radius: 50%;
+  background-size: 75% 75%;
+  background-position: center;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.player .previous {
+  background-image: url("/images/next.svg");
+}
+
+.player .pause-play {
+  background-image: url("/images/pause.svg");
+}
+
+.player .pause-play.active {
+  background-image: url("/images/play.svg");
+}
+
+.player .next {
+  background-image: url("/images/next.svg");
+}
+
+.player .controls-divider {
+  width: 250px;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.3);
+  margin: auto 25px;
+}
+
+.player .extra-controls {
+  height: 50px;
+  align-items: end;
+}
+
+.player .lyrics {
+  background-image: url("/images/lyrics.svg");
+}
+
+.player .tag {
+  background-image: url("/images/tag.svg");
+}

@@ -2,15 +2,16 @@
 <html lang="en">
 
 <head>
-<!-- https://fonts.google.com/icons?icon.set=Material+Symbols&icon.style=Rounded&icon.size=50&icon.color=%23FFFFFF&icon.platform=web -->
+  <!-- https://fonts.google.com/icons?icon.set=Material+Symbols&icon.style=Rounded&icon.size=50&icon.color=%23FFFFFF&icon.platform=web -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Offline Music Player</title>
   <link rel="shortcut icon" href="images/logo.png" type="image/x-icon">
-  <link rel="stylesheet" href="global.css">
-  <link rel="stylesheet" href="editor-and-queue.css">
-  <link rel="stylesheet" href="playlist.css">
-  <link rel="stylesheet" href="player.css">
+  <link rel="stylesheet" href="styles/global.css">
+  <link rel="stylesheet" href="styles/editor-and-queue.css">
+  <link rel="stylesheet" href="styles/playlist.css">
+  <link rel="stylesheet" href="styles/player.css">
+  <link rel="stylesheet" href="styles/overlay.css">
   <script src="fuse.js" defer></script>
   <script src="player.js" defer></script>
 </head>
@@ -23,37 +24,29 @@
           <div class="library">View My Library &gt;</div>
           <div class="youtube">
             <div class="header">
-              <div class="label">Youtube</div>
+              <div class="label">YouTube</div>
               <div class="sync"></div>
               <div class="add"></div>
             </div>
-            <div class="playlist">
-              <div class="name">Standard Playlist</div>
-              <div class="play"></div>
-            </div>
           </div>
-          <div class="personal">
+          <div class="local">
             <div class="header">
-              <div class="label">Personal</div>
+              <div class="label">Local</div>
               <div class="add"></div>
-            </div>
-            <div class="playlist">
-              <div class="name">Standard Playlist</div>
-              <div class="play"></div>
             </div>
           </div>
         </div>
         <div class="song-tab">
-          <div class="thumbnail-container" style="--thumbnail: url('thumbnails/_7FaMmsU8PI.webp')">
-            <div class="thumbnail-background"></div>
-            <div class="thumbnail"></div>
+          <div class="thumbnail-container">
+            <img class="thumbnail-background">
+            <img class="thumbnail">
           </div>
           <div class="song-details">
-            <div class="song-title">Ashley</div>
-            <div class="song-artist">Halsey</div>
+            <div class="song-title">Song</div>
+            <div class="song-artist">Artist</div>
           </div>
           <div class="actions-container">
-            <div class="play">
+            <div class="pause-play">
             </div>
             <div class="actions">
               <div class="previous"></div>
@@ -119,12 +112,12 @@
 
       <div class="player">
         <div class="thumbnail-container">
-          <div class="thumbnail-background"></div>
-          <div class="thumbnail"></div>
+          <img class="thumbnail-background">
+          <img class="thumbnail">
         </div>
         <div class="control-panel">
           <div class="song-details">
-            <div class="song-title">Song Name</div>
+            <div class="song-title">Song</div>
             <div class="song-artist">Artist</div>
           </div>
           <div class="buttons">
@@ -153,11 +146,18 @@
     </div>
   </div>
   <div class="song-tab clone"></div>
-  <div class="search-container">
+  <div class="overlay">
     <input class="search-bar" type="text" placeholder="Please search here">
     <div class="search-results-container">
       <div class="search-results">
         <div class="placeholder">Press <kbd>Esc</kbd> to cancel.</div>
+      </div>
+    </div>
+    <div class="popup-container">
+      <div class="popup-description"></div>
+      <div class="popup-input">
+        <input type="text" placeholder="Paste URL or ID here">
+        <button>Done</button>
       </div>
     </div>
   </div>

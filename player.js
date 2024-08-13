@@ -3,34 +3,23 @@ window.addEventListener("error", (e) => {
 });
 
 // ----- Load Music Data -----
-const github = "https://github.com";
 async function loadMusic() {
 	try {
 		window.library = await fetch("library.json").then((data) => data.json());
 		window.playlists = await fetch("playlists.json").then((data) =>
 			data.json(),
 		);
-		localStorage.setItem("library", library);
-		localStorage.setItem("playlists", playlists);
+		localStorage.setItem("library", JSON.stringify(library));
+		localStorage.setItem("playlists", JSON.stringify(playlists));
 	} catch {
-		try {
-			window.library = await fetch(`${github}library.json`).then((data) =>
-				data.json(),
-			);
-			window.playlists = await fetch(`${github}/playlists.json`).then((data) =>
-				data.json(),
-			);
-			localStorage.setItem("library", library);
-			localStorage.setItem("playlists", playlists);
-		} catch {
-			window.library = localStorage.getItem("library");
-			window.playlists = localStorage.getItem("playlists");
-		}
+		window.library = JSON.parse(localStorage.getItem("library"));
+		window.playlists = JSON.parse(localStorage.getItem("playlists"));
 	}
 
 	// Save queue in localStorage on offload
 	populateSongList(playlists.youtube[0].songs, true);
 	populateSongList(library.order.bySong, false);
+	populatePlaylists();
 
 	for (const id of library.order.bySong) {
 		searchDB.push({
@@ -82,10 +71,19 @@ async function playSong() {
 
 	audio.pause();
 
-	$(".player .thumbnail-container")[0].style =
-		`--thumbnail: url('thumbnails/${song.id}.webp')`;
+	$(".player .thumbnail-container img")[0].src = `thumbnails/${song.id}.webp`;
+	$(".player .thumbnail-container img")[1].src = `thumbnails/${song.id}.webp`;
 	$(".player .song-title")[0].innerText = song.song;
 	$(".player .song-artist")[0].innerText = song.artist;
+
+	$(".playlist-select-container .song-tab img")[0].src =
+		`thumbnails/${song.id}.webp`;
+	$(".playlist-select-container .song-tab img")[1].src =
+		`thumbnails/${song.id}.webp`;
+	$(".playlist-select-container .song-tab .song-title")[0].innerText =
+		song.song;
+	$(".playlist-select-container .song-tab .song-artist")[0].innerText =
+		song.artist;
 
 	audio = new Audio(`audios/${song.id}.mp3`);
 
@@ -95,8 +93,8 @@ async function playSong() {
 	});
 
 	const autoTag = $(".queue-container .auto")[0];
-	const autoI = [...autoTag.parentElement.children].indexOf(autoTag);
-	const songI = [...el.parentElement.children].indexOf(el);
+	const autoI = [...queueEl.children].indexOf(autoTag);
+	const songI = [...queueEl.children].indexOf(el);
 	if (songI > autoI) {
 		const border = el.nextElementSibling;
 		queueEl.insertBefore(autoTag.previousElementSibling, border);
@@ -208,7 +206,7 @@ navigator.mediaSession?.setActionHandler("nexttrack", () => nextBtn.click());
 
 // Use space to pause/play
 document.addEventListener("keydown", (e) => {
-	if (e.key === " " && !$(".search-container.show")[0]) {
+	if (e.key === " " && !$(".overlay.search")[0] && !$(".overlay.popup")[0]) {
 		e.preventDefault();
 		playBtn.click();
 	}
@@ -224,13 +222,13 @@ document.addEventListener("keydown", (e) => {
 		);
 	}
 
-	if ($(".search-container.show")[0]) {
+	if ($(".overlay.search")[0]) {
 		if (e.key === "Escape") {
-			$(".search-container")[0].classList.remove("show");
+			$(".overlay")[0].classList.remove("search");
 		}
 		if (e.key === "ArrowDown") {
-			const songTabs = [...$(".search-container .song-tab")];
-			const currTab = $(".search-container .song-tab.playing")[0];
+			const songTabs = [...$(".overlay .song-tab")];
+			const currTab = $(".overlay .song-tab.playing")[0];
 			let i = songTabs.indexOf(currTab);
 			if (i === songTabs.length - 1) i = 0;
 			else i++;
@@ -238,8 +236,8 @@ document.addEventListener("keydown", (e) => {
 			songTabs[i].classList.add("playing");
 		}
 		if (e.key === "ArrowUp") {
-			const songTabs = [...$(".search-container .song-tab")];
-			const currTab = $(".search-container .song-tab.playing")[0];
+			const songTabs = [...$(".overlay .song-tab")];
+			const currTab = $(".overlay .song-tab.playing")[0];
 			let i = songTabs.indexOf(currTab);
 			if (i === 0) i = songTabs.length - 1;
 			else i--;
@@ -247,13 +245,21 @@ document.addEventListener("keydown", (e) => {
 			songTabs[i].classList.add("playing");
 		}
 		if (e.key === "Enter") {
-			const currTab = $(".search-container .song-tab.playing")[0];
-			currTab.click();
+			return $(".overlay .song-tab.playing")[0]?.click();
+		}
+	}
+
+	if ($(".overlay.popup")[0]) {
+		if (e.key === "Escape") {
+			$(".overlay")[0].classList.remove("popup");
+		}
+		if (e.key === "Enter") {
+			return $(".overlay .popup-container button")[0].click();
 		}
 	}
 
 	if (document.activeElement.tagName === "INPUT" && e.key === "Enter") {
-    document.activeElement.blur();
+		document.activeElement.blur();
 	}
 });
 
@@ -269,15 +275,6 @@ slider.addEventListener("change", () => {
 	currTimeEl.innerText = convertTime(audio.currentTime);
 	skipUpdate = false;
 });
-
-// Update slider and time
-setInterval(() => {
-	if (skipUpdate) return;
-	slider.value = audio.currentTime / audio.duration || 0;
-	currTimeEl.innerText = convertTime(audio.currentTime);
-	if (audio.paused) playBtn.classList.add("active");
-	else playBtn.classList.remove("active");
-}, 200);
 
 function convertTime(num) {
 	const parsedNum = Number.parseInt(num);
@@ -296,8 +293,19 @@ function populateSongList(songList, queue) {
 	let appendDiv;
 	if (queue) {
 		appendDiv = queueEl;
+
+		// Nothing to clear if populating queue for the first time
+		if ($(".queue-container .playing")[0]) {
+			shiftPlayingAboveAuto();
+
+			// Clear queue
+			const autoI = [...queueEl.children].indexOf(autoTag);
+			for (const el of [...appendDiv.children].slice(autoI + 2)) el.remove();
+		}
 	} else {
 		appendDiv = editorEl;
+
+		// Clear song list
 		for (const el of [...appendDiv.children].slice(2)) el.remove();
 	}
 
@@ -317,9 +325,9 @@ function populateSongList(songList, queue) {
 		div.dataset.artist = song.artist;
 
 		if (queue) {
-			div.innerHTML = `<div class="thumbnail-container" style="--thumbnail: url('thumbnails/${song.id}.webp')"><div class="thumbnail-background"></div><div class="thumbnail"></div></div><div class="song-details"><div class="song-title">${song.song}</div><div class="song-artist">${song.artist}</div></div><div class="actions-container"><div class="repeat-container"><div class="repeat"></div><input value="1" data-value="1" size="1"></div><div class="actions"><div class="tag"></div><div class="delete"></div></div></div>`;
+			div.innerHTML = `<div class="thumbnail-container"><img class="thumbnail-background" src="thumbnails/${song.id}.webp" loading="lazy"><img class="thumbnail" src="thumbnails/${song.id}.webp" loading="lazy"></div><div class="song-details"><div class="song-title">${song.song}</div><div class="song-artist">${song.artist}</div></div><div class="actions-container"><div class="repeat-container"><div class="repeat"></div><input value="1" data-value="1" size="1"></div><div class="actions"><div class="tag"></div><div class="delete"></div></div></div>`;
 		} else {
-			div.innerHTML = `<div class="thumbnail-container" style="--thumbnail: url('thumbnails/${song.id}.webp')"><div class="thumbnail-background"></div><div class="thumbnail"></div></div><div class="song-details"><div class="song-title">${song.song}</div><div class="song-artist">${song.artist}</div></div><div class="actions-container"><div class="tag"></div><div class="delete"></div></div>`;
+			div.innerHTML = `<div class="thumbnail-container"><img class="thumbnail-background" src="thumbnails/${song.id}.webp" loading="lazy"><img class="thumbnail" src="thumbnails/${song.id}.webp" loading="lazy"></div><div class="song-details"><div class="song-title">${song.song}</div><div class="song-artist">${song.artist}</div></div><div class="actions-container"><div class="tag"></div><div class="delete"></div></div>`;
 		}
 
 		appendDiv.appendChild(div);
@@ -336,14 +344,27 @@ function populateSongList(songList, queue) {
 	}
 }
 
+function shiftPlayingAboveAuto() {
+	const currPlaying = $(".queue-container .playing")[0];
+	const autoTag = $(".queue-container .auto")[0];
+	const autoI = [...queueEl.children].indexOf(autoTag);
+	const songI = [...queueEl.children].indexOf(currPlaying);
+	if (songI > autoI) {
+		const border = currPlaying.nextElementSibling;
+		queueEl.insertBefore(autoTag.previousElementSibling, border);
+		queueEl.insertBefore(autoTag, border);
+	}
+}
+
 let lastInputClick = [0, null];
 
 queueEl.addEventListener("click", (e) => {
-	let target = e.target;
+	let { target } = e;
 	if (target.classList.contains("add")) {
 		addBorder = target.parentElement;
-		$(".search-container")[0].classList.add("show");
-		$(".search-container input")[0].focus();
+		$(".overlay")[0].classList.add("search");
+		$(".overlay .search-bar")[0].focus();
+		$(".overlay .search-bar")[0].select();
 	} else if (
 		target.classList.contains("repeat-container") ||
 		target.parentElement.classList.contains("repeat-container")
@@ -353,7 +374,6 @@ queueEl.addEventListener("click", (e) => {
 		if (currTime - lastInputClick[0] < 250 && lastInputClick[1] === inputEl) {
 			inputEl.value = "";
 			inputEl.focus();
-			inputEl.selectionStart = inputEl.selectionEnd = 0;
 		} else {
 			if (inputEl.value === "1") inputEl.value = "2";
 			else if (inputEl.value === "2") inputEl.value = "3";
@@ -405,26 +425,6 @@ let dragCloneOffset = [0, 0];
 let mousePos = [0, 0];
 let dragOverrides = [false, false];
 const songTabClone = $(".song-tab.clone")[0];
-
-setInterval(() => {
-	if (!dragging || scrollQueue === 0) return;
-	queueEl.scrollTop += scrollQueue * 10;
-
-	let droppable = [...$(".queue-container .song-divider")];
-	droppable.splice(droppable.indexOf(dragEls[0]), 1);
-	droppable = droppable.splice(
-		Math.max(0, Number.parseInt(queueEl.scrollTop / 71)),
-		10,
-	);
-	for (const el of droppable) {
-		const withinHeight =
-			Math.abs(el.getBoundingClientRect().y - mousePos[1]) < 25;
-		if (withinHeight) {
-			queueEl.insertBefore(dragEls[0], el);
-			queueEl.insertBefore(dragEls[1], el);
-		}
-	}
-}, 50);
 
 // Dragging initialization
 queueEl.addEventListener("mousedown", (e) => {
@@ -487,14 +487,14 @@ queueEl.addEventListener("contextmenu", (e) => e.preventDefault());
 // - Search for adding songs
 document.addEventListener("mousemove", (e) => {
 	// Search for adding songs
-	if (!mousedown && $(".search-container.show")[0]) {
+	if (!mousedown && $(".overlay.search")[0]) {
 		target = e.target;
 		while (!target.classList.contains("song-tab")) {
 			if (target === document.body) return;
 			target = target.parentElement;
 		}
 
-		$(".search-container .playing")[0].classList.remove("playing");
+		$(".overlay .playing")[0].classList.remove("playing");
 		target.classList.add("playing");
 	}
 
@@ -651,10 +651,10 @@ queueEl.addEventListener("focusout", (e) => {
 });
 
 // ----- Search -----
-const searchRes = $(".search-container .search-results")[0];
+const searchRes = $(".overlay .search-results")[0];
 const searchDB = [];
 
-$(".search-container input")[0].addEventListener("input", (e) => {
+$(".overlay .search-bar")[0].addEventListener("input", (e) => {
 	searchRes.innerHTML = "";
 
 	const fuse = new window.Fuse(searchDB, {
@@ -672,7 +672,7 @@ $(".search-container input")[0].addEventListener("input", (e) => {
 			div.dataset.song = song.song;
 			div.dataset.artist = song.artist;
 
-			div.innerHTML = `<div class="thumbnail-container" style="--thumbnail: url('thumbnails/${song.id}.webp')"><div class="thumbnail-background"></div><div class="thumbnail"></div></div><div class="song-details"><div class="song-title">${song.song}</div><div class="song-artist">${song.artist}</div></div>`;
+			div.innerHTML = `<div class="thumbnail-container"><img class="thumbnail-background" src="thumbnails/${song.id}.webp" loading="lazy"><img class="thumbnail" src="thumbnails/${song.id}.webp" loading="lazy"></div><div class="song-details"><div class="song-title">${song.song}</div><div class="song-artist">${song.artist}</div></div>`;
 
 			searchRes.appendChild(div);
 
@@ -686,27 +686,47 @@ $(".search-container input")[0].addEventListener("input", (e) => {
 	}
 });
 
-$(".search-container")[0].addEventListener("click", (e) => {
-	let target = e.target;
-	while (!target.classList.contains("song-tab")) {
-		if (target.classList.contains("search-results-container")) return;
-		if (target.classList.contains("search-container"))
-			return target.classList.remove("show");
-		target = target.parentElement;
+$(".overlay")[0].addEventListener("click", (e) => {
+	let { target } = e;
+	if (target.classList.contains("overlay")) {
+		target.classList.remove("search");
+		target.classList.remove("popup");
+		return;
 	}
-	$(".search-container")[0].classList.remove("show");
-	target.classList.remove("playing");
-	target.nextElementSibling.innerHTML = `<div class="add"></div>`;
-	queueEl.insertBefore(target.nextElementSibling, addBorder);
-	queueEl.insertBefore(target, addBorder);
 
-	const div = document.createElement("div");
-	div.classList.add("actions-container");
-	div.innerHTML = `<div class="repeat-container"><div class="repeat"></div><input value="1" data-value="1" size="1"></div><div class="actions"><div class="tag"></div><div class="delete"></div>`;
-	target.appendChild(div);
+	if ($(".overlay.search")[0]) {
+		// Find song tab
+		while (!target.classList.contains("song-tab")) {
+			if (
+				target.classList.contains("search-results-container") ||
+				target.classList.contains("search-bar")
+			)
+				return;
+			target = target.parentElement;
+		}
+		$(".overlay")[0].classList.remove("search");
 
-	$(".search-container input")[0].value = "";
-	$(".search-container input")[0].dispatchEvent(new InputEvent("input"));
+		// Copy over song tab
+		border = target.nextElementSibling.cloneNode();
+		target = target.cloneNode(true);
+		target.classList.remove("playing");
+		border.innerHTML = `<div class="add"></div>`;
+
+		// Add action buttons
+		const div = document.createElement("div");
+		div.classList.add("actions-container");
+		div.innerHTML = `<div class="repeat-container"><div class="repeat"></div><input value="1" data-value="1" size="1"></div><div class="actions"><div class="tag"></div><div class="delete"></div>`;
+		target.appendChild(div);
+
+		// Insert copied song tab
+		queueEl.insertBefore(border, addBorder);
+		queueEl.insertBefore(target, addBorder);
+	}
+
+	if ($(".overlay.popup")[0] && target.tagName === "BUTTON") {
+		popupAction($(".overlay .popup-container input")[0].value);
+		$(".overlay")[0].classList.remove("popup");
+	}
 });
 
 // ----- Toggle playlist editor -----
@@ -723,9 +743,209 @@ $(".nav .jump")[0].addEventListener("click", () => {
 });
 
 // -------------------- Playlist Editor --------------------
+
+// ----- Secondary Player -----
+const playBtn2 = $(".playlist-select-container .song-tab .pause-play")[0];
+const prevBtn2 = $(".playlist-select-container .song-tab .previous")[0];
+const nextBtn2 = $(".playlist-select-container .song-tab .next")[0];
+const YTPlaylistsEl = $(".playlist-select-container .youtube")[0];
+const localPlaylistsEl = $(".playlist-select-container .local")[0];
+
+playBtn2.addEventListener("click", () => playBtn.click());
+prevBtn2.addEventListener("click", () => prevBtn.click());
+nextBtn2.addEventListener("click", () => nextBtn.click());
+
+let popupAction;
+
+function populatePlaylists() {
+	for (const el of [...YTPlaylistsEl.children].slice(1)) el.remove();
+
+	for (const playlist of playlists.youtube) {
+		const div = document.createElement("div");
+		div.classList.add("playlist");
+		div.innerHTML = `<div class="name" data-playlist-id="${playlist.playlistId}">${playlist.playlistName}</div><div class="play"></div>`;
+		YTPlaylistsEl.appendChild(div);
+
+		div.addEventListener("click", () => {
+			const editor = $(".editor-container .editor")[0];
+			editor.classList.remove("library");
+			editor.classList.add("youtube");
+			editor.classList.remove("local");
+
+			$(".editor-container .playlist-title-container span")[0].innerText =
+				playlist.playlistName;
+			editor.children[1].style.marginTop = `${editor.children[0].clientHeight - 1}px`;
+
+			const i = [...YTPlaylistsEl.children].indexOf(div) - 1;
+			populateSongList(playlists.youtube[i].songs, false);
+		});
+	}
+
+	for (const el of [...localPlaylistsEl.children].slice(1)) el.remove();
+
+	for (const playlist of playlists.local) {
+		const div = document.createElement("div");
+		div.classList.add("playlist");
+		div.innerHTML = `<div class="name" data-playlist-id="${playlist.playlistId}">${playlist.playlistName}</div><div class="play"></div>`;
+		localPlaylistsEl.appendChild(div);
+
+		div.addEventListener("click", () => {
+			const editor = $(".editor-container .editor")[0];
+			editor.classList.remove("library");
+			editor.classList.remove("youtube");
+			editor.classList.add("local");
+
+			$(".editor-container .playlist-title-container span")[0].innerText =
+				playlist.playlistName;
+			editor.children[1].style.marginTop = `${editor.children[0].clientHeight - 1}px`;
+
+			const i = [...localPlaylistsEl.children].indexOf(div) - 1;
+			populateSongList(playlists.youtube[i].songs, false);
+		});
+	}
+}
+
+$(".playlist-select-container .library")[0].addEventListener("click", () => {
+	const editor = $(".editor-container .editor")[0];
+	editor.classList.add("library");
+	editor.classList.remove("youtube");
+	editor.classList.remove("local");
+
+	$(".editor-container .playlist-title-container span")[0].innerText =
+		"My Library";
+	editor.children[1].style.marginTop = `${editor.children[0].clientHeight - 1}px`;
+
+	const orderType = $(".editor-container .playlist-options select")[0].value;
+	populateSongList(library.order[orderType], false);
+});
+
+$(".playlist-select-container .youtube .sync")[0].addEventListener(
+	"click",
+	() => {
+		fetch("/playlists-sync").then(async (data) => {
+			if (data.status !== 200) {
+				alert("Operation failed. Please check console.");
+				console.log(await data.text());
+			}
+		});
+	},
+);
+
+$(".playlist-select-container .youtube .add")[0].addEventListener(
+	"click",
+	() => {
+		$(".overlay .popup-container .popup-description")[0].innerText =
+			"Please copy and paste your YouTube playlist URL or ID.";
+
+		$(".overlay")[0].classList.add("popup");
+		popupAction = addPlaylistAPI;
+	},
+);
+
 $(".editor-container .playlist-options select")[0].addEventListener(
 	"change",
 	(e) => {
 		populateSongList(library.order[e.target.value], false);
 	},
 );
+
+$(".editor-container .playlist-options .add")[0].addEventListener(
+	"click",
+	() => {
+		$(".overlay .popup-container .popup-description")[0].innerText =
+			"Please copy and paste your song URL or song ID.";
+
+		$(".overlay")[0].classList.add("popup");
+		popupAction = addSongAPI;
+	},
+);
+
+async function addPlaylistAPI(inputData) {
+	// Extract playlist ID
+	let playlistId = inputData.split("/");
+	if (playlistId.length === 36) playlistId = playlistId.slice(2);
+	if (playlistId.length !== 34) {
+		if (playlistId.at(-2) === "browse")
+			playlistId = playlistId
+				.at(-1)
+				.match(/[a-z0-9_-]+/i)[0]
+				.slice(2);
+		else {
+			playlistId = playlistId.at(-1).match(/[&?]list=([a-z0-9_-]+)/i)[1];
+		}
+
+		if (playlistId.length !== 34) {
+			throw new Error("Invalid link or ID entered.");
+		}
+	}
+
+	const data = await fetch("/add-playlist", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ playlistId }),
+	});
+
+	if (data.status === 200) {
+		window.library = await fetch("library.json").then((data) => data.json());
+		window.playlists = await fetch("playlists.json").then((data) =>
+			data.json(),
+		);
+		// Repopulate (playlist-select-container & editor-container)
+		populatePlaylists();
+	} else {
+		alert("Operation failed. Please check console.");
+		console.log(await data.text());
+	}
+}
+
+async function addSongAPI(inputData) {
+	const data = await fetch("/add-playlist");
+	if (data.status === 200) {
+		window.library = await fetch("library.json").then((data) => data.json());
+		window.playlists = await fetch("playlists.json").then((data) =>
+			data.json(),
+		);
+		// Repopulate (playlist-select-container & editor-container)
+	} else {
+		alert("Operation failed. Please check console.");
+		console.log(await data.text());
+	}
+}
+
+// -------------------- Constantly Updating --------------------
+setInterval(() => {
+	// Update slider and time
+	if (skipUpdate) return;
+	slider.value = audio.currentTime / audio.duration || 0;
+	currTimeEl.innerText = convertTime(audio.currentTime);
+	if (audio.paused) {
+		playBtn.classList.add("active");
+		playBtn2.classList.add("active");
+	} else {
+		playBtn.classList.remove("active");
+		playBtn2.classList.remove("active");
+	}
+}, 100);
+
+setInterval(() => {
+	// Dragging functionality
+	if (!dragging || scrollQueue === 0) return;
+	queueEl.scrollTop += scrollQueue * 10;
+
+	let droppable = [...$(".queue-container .song-divider")];
+	droppable.splice(droppable.indexOf(dragEls[0]), 1);
+	droppable = droppable.splice(
+		Math.max(0, Number.parseInt(queueEl.scrollTop / 71)),
+		10,
+	);
+	for (const el of droppable) {
+		const withinHeight =
+			Math.abs(el.getBoundingClientRect().y - mousePos[1]) < 25;
+		if (withinHeight) {
+			queueEl.insertBefore(dragEls[0], el);
+			queueEl.insertBefore(dragEls[1], el);
+		}
+	}
+}, 50);

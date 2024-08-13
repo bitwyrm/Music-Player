@@ -1,0 +1,133 @@
+.overlay {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 50px 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  flex-direction: column;
+  align-items: center;
+  font-size: 30px;
+  gap: 30px;
+  z-index: 2;
+}
+
+.overlay.search,
+.overlay.popup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay input,
+.overlay button {
+  outline: none;
+  background-color: var(--grey);
+  color: white;
+  border: 1px white solid;
+  border-radius: 15px;
+  box-sizing: border-box;
+}
+
+.overlay .search-bar {
+  display: none;
+  width: 500px;
+  height: 60px;
+  flex: 0 0 60px;
+  font-size: 30px;
+  padding: 15px 20px;
+}
+
+.overlay.search .search-bar {
+  display: block;
+}
+
+.overlay .search-results-container {
+  display: none;
+  width: 325px;
+  flex: 1 1 auto;
+  background-color: var(--grey);
+  color: white;
+  border: 1px white solid;
+  border-radius: 15px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.overlay.search .search-results-container {
+  display: block;
+}
+
+.overlay .search-results {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.overlay .placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  margin: 20px;
+}
+
+.overlay .song-tab {
+  width: 100%;
+  padding-left: 25px;
+  box-sizing: border-box;
+}
+
+.overlay .song-details {
+  flex: 1 1 200px;
+}
+
+.overlay .song-divider {
+  width: 100%;
+  z-index: 3;
+}
+
+.overlay input,
+.overlay button {
+  border-width: 2px;
+}
+
+.overlay .popup-container {
+  display: none;
+  width: 500px;
+  padding: 30px;
+  box-sizing: border-box;
+  background-color: var(--grey);
+  border: 1px white solid;
+  border-radius: 15px;
+}
+
+.overlay.popup .popup-container {
+  display: block;
+}
+
+.overlay.popup .popup-description {
+  margin-bottom: 15px;
+}
+
+.overlay .popup-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.overlay .popup-input input {
+  flex: 1 1 auto;
+  font-size: 24px;
+  padding: 10px 15px;
+}
+
+.overlay .popup-input button {
+  flex: 0 0 auto;
+  background-color: rgb(216, 0, 108);
+  font-weight: bold;
+  font-size: 24px;
+  padding: 10px 15px;
+  cursor: pointer;
+}
