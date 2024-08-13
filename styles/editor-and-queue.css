@@ -67,6 +67,10 @@
   background-image: url("/images/delete-forever.svg");
 }
 
+.editor-container .editor.youtube .song-tab .delete {
+  display: none;
+}
+
 .song-divider {
   width: 300px;
   height: 1px;

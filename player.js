@@ -299,7 +299,9 @@ function populateSongList(songList, queue) {
 			shiftPlayingAboveAuto();
 
 			// Clear queue
-			const autoI = [...queueEl.children].indexOf(autoTag);
+			const autoI = [...queueEl.children].indexOf(
+				$(".queue-container .auto")[0],
+			);
 			for (const el of [...appendDiv.children].slice(autoI + 2)) el.remove();
 		}
 	} else {
@@ -758,65 +760,57 @@ nextBtn2.addEventListener("click", () => nextBtn.click());
 let popupAction;
 
 function populatePlaylists() {
-	for (const el of [...YTPlaylistsEl.children].slice(1)) el.remove();
+	for (const source in playlists) {
+		const playlistEl = $(`.playlist-select-container .${source}`)[0];
+		for (const el of [...playlistEl.children].slice(1)) el.remove();
 
-	for (const playlist of playlists.youtube) {
-		const div = document.createElement("div");
-		div.classList.add("playlist");
-		div.innerHTML = `<div class="name" data-playlist-id="${playlist.playlistId}">${playlist.playlistName}</div><div class="play"></div>`;
-		YTPlaylistsEl.appendChild(div);
+		for (const playlist of playlists[source]) {
+			const div = document.createElement("div");
+			div.classList.add("playlist");
+			div.innerHTML = `<div class="name" data-playlist-id="${playlist.playlistId}">${playlist.playlistName}</div><div class="play"></div>`;
+			playlistEl.appendChild(div);
 
-		div.addEventListener("click", () => {
-			const editor = $(".editor-container .editor")[0];
-			editor.classList.remove("library");
-			editor.classList.add("youtube");
-			editor.classList.remove("local");
+			div.addEventListener("click", (e) => {
+				if (e.target.classList.contains("play")) {
+					const i = [...playlistEl.children].indexOf(div) - 1;
+					populateSongList(playlists[source][i].songs, true);
+					$(".slider-container")[0].classList.add("active");
+				} else {
+					const editor = $(".editor-container .editor")[0];
+					editor.classList.remove("library");
+					editor.classList.remove("youtube");
+					editor.classList.remove("local");
+					editor.classList.add(source);
 
-			$(".editor-container .playlist-title-container span")[0].innerText =
-				playlist.playlistName;
-			editor.children[1].style.marginTop = `${editor.children[0].clientHeight - 1}px`;
+					$(".editor-container .playlist-title-container span")[0].innerText =
+						playlist.playlistName;
+					editor.children[1].style.marginTop = `${editor.children[0].clientHeight - 1}px`;
 
-			const i = [...YTPlaylistsEl.children].indexOf(div) - 1;
-			populateSongList(playlists.youtube[i].songs, false);
-		});
-	}
-
-	for (const el of [...localPlaylistsEl.children].slice(1)) el.remove();
-
-	for (const playlist of playlists.local) {
-		const div = document.createElement("div");
-		div.classList.add("playlist");
-		div.innerHTML = `<div class="name" data-playlist-id="${playlist.playlistId}">${playlist.playlistName}</div><div class="play"></div>`;
-		localPlaylistsEl.appendChild(div);
-
-		div.addEventListener("click", () => {
-			const editor = $(".editor-container .editor")[0];
-			editor.classList.remove("library");
-			editor.classList.remove("youtube");
-			editor.classList.add("local");
-
-			$(".editor-container .playlist-title-container span")[0].innerText =
-				playlist.playlistName;
-			editor.children[1].style.marginTop = `${editor.children[0].clientHeight - 1}px`;
-
-			const i = [...localPlaylistsEl.children].indexOf(div) - 1;
-			populateSongList(playlists.youtube[i].songs, false);
-		});
+					const i = [...playlistEl.children].indexOf(div) - 1;
+					populateSongList(playlists[source][i].songs, false);
+				}
+			});
+		}
 	}
 }
 
-$(".playlist-select-container .library")[0].addEventListener("click", () => {
-	const editor = $(".editor-container .editor")[0];
-	editor.classList.add("library");
-	editor.classList.remove("youtube");
-	editor.classList.remove("local");
-
-	$(".editor-container .playlist-title-container span")[0].innerText =
-		"My Library";
-	editor.children[1].style.marginTop = `${editor.children[0].clientHeight - 1}px`;
-
+$(".playlist-select-container .library")[0].addEventListener("click", (e) => {
 	const orderType = $(".editor-container .playlist-options select")[0].value;
-	populateSongList(library.order[orderType], false);
+
+	if (e.target.classList.contains("play")) {
+		populateSongList(library.order[orderType], true);
+		$(".slider-container")[0].classList.add("active");
+	} else {
+		const editor = $(".editor-container .editor")[0];
+		editor.classList.add("library");
+		editor.classList.remove("youtube");
+		editor.classList.remove("local");
+
+		$(".editor-container .playlist-title-container span")[0].innerText =
+			"My Library";
+		editor.children[1].style.marginTop = `${editor.children[0].clientHeight - 1}px`;
+		populateSongList(library.order[orderType], false);
+	}
 });
 
 $(".playlist-select-container .youtube .sync")[0].addEventListener(

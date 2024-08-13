@@ -1,5 +1,2 @@
 node_modules
-library.json
-playlists.json
-internal/force-map.json
 *.DS_Store
