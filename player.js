@@ -32,22 +32,6 @@ async function loadMusic() {
 
 loadMusic();
 
-// fetch("/sync").then(async data => {
-//   console.log(data.status);
-//   console.log(await data.text());
-// });
-
-// fetch("/add-playlist", {
-// 	method: "POST",
-//     headers: {
-//       "Content-Type": "application/json"
-//     },
-// 	body: JSON.stringify({ playlistId: "PLuvF8ytQv3mYDesp2YtuWMfQvW4VVyexX" }),
-// }).then(async (data) => {
-// 	console.log(data.status);
-// 	console.log(await data.text());
-// });
-
 // fetch("/delete-song", {
 // 	headers: {
 // 		"Content-Type": "application/json",
@@ -140,7 +124,6 @@ const playBtn = $(".player .pause-play")[0];
 const prevBtn = $(".player .previous")[0];
 const nextBtn = $(".player .next")[0];
 const queueEl = $(".queue-container .queue")[0];
-const editorEl = $(".editor-container .editor")[0];
 
 const currTimeEl = $(".player .current-time")[0];
 const totalTimeEl = $(".player .total-time")[0];
@@ -190,7 +173,7 @@ nextBtn.addEventListener("click", () => {
 	songTabs[i + 1].classList.add("playing");
 	playSong();
 
-	if (dragging) {
+	if (dragging[1]) {
 		if (dragEls[1].classList.contains("playing")) {
 			songTabClone.classList.add("playing");
 		} else {
@@ -211,7 +194,7 @@ document.addEventListener("keydown", (e) => {
 		playBtn.click();
 	}
 
-	if (dragging && e.key === "Escape") {
+	if (dragging[1] && e.key === "Escape") {
 		queueEl.insertBefore(dragEls[0], dragEls[2]);
 		queueEl.insertBefore(dragEls[1], dragEls[2]);
 		document.dispatchEvent(
@@ -296,7 +279,7 @@ function populateSongList(songList, queue) {
 
 		// Nothing to clear if populating queue for the first time
 		if ($(".queue-container .playing")[0]) {
-			shiftPlayingAboveAuto();
+			shiftAutoBelowPlaying();
 
 			// Clear queue
 			const autoI = [...queueEl.children].indexOf(
@@ -346,7 +329,7 @@ function populateSongList(songList, queue) {
 	}
 }
 
-function shiftPlayingAboveAuto() {
+function shiftAutoBelowPlaying() {
 	const currPlaying = $(".queue-container .playing")[0];
 	const autoTag = $(".queue-container .auto")[0];
 	const autoI = [...queueEl.children].indexOf(autoTag);
@@ -414,219 +397,6 @@ queueEl.addEventListener("click", (e) => {
 		$(".queue-container .playing")[0]?.classList.remove("playing");
 		target.classList.add("playing");
 		playSong();
-	}
-});
-
-// ----- Dragging Functionality -----
-let mousedown = false;
-let dragging = false;
-let dragEls = [];
-let scrollQueue = 0;
-let dragStartPos = [];
-let dragCloneOffset = [0, 0];
-let mousePos = [0, 0];
-let dragOverrides = [false, false];
-const songTabClone = $(".song-tab.clone")[0];
-
-// Dragging initialization
-queueEl.addEventListener("mousedown", (e) => {
-	dragEls = e.target;
-	while (!dragEls.classList.contains("song-tab")) {
-		if (dragEls === queueEl) {
-			dragEls = [];
-			return;
-		}
-		dragEls = dragEls.parentElement;
-	}
-
-	// Context menu triggered
-	if (e.button === 2 || (e.button === 0 && e.ctrlKey)) {
-		// Options:
-		// - Delete
-		//   - Delete above (click+w)
-		//   - Delete below (click+s)
-		// - Shuffle
-		//   - Shuffle below playing (default [click], click+s)
-		//   - Shuffle and move playing to top (click+w)
-		// https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
-		return;
-	}
-
-	mousedown = true;
-	dragStartPos = [e.clientX, e.clientY];
-	dragCloneOffset = [
-		dragEls.getBoundingClientRect().x - e.clientX,
-		dragEls.getBoundingClientRect().y - e.clientY,
-	];
-	dragEls = [
-		dragEls.previousElementSibling,
-		dragEls,
-		dragEls.nextElementSibling,
-	];
-
-	dragOverrides = [false, false];
-	let bounds = queueEl.getBoundingClientRect();
-	bounds = [
-		bounds.x,
-		bounds.x + bounds.width,
-		bounds.y,
-		bounds.y + bounds.height,
-	];
-	if (e.clientY < bounds[2] + 175) {
-		dragOverrides[0] = true;
-	}
-	if (e.clientY > bounds[3] - 175) {
-		dragOverrides[1] = true;
-	}
-});
-
-// Disable default context menu
-queueEl.addEventListener("contextmenu", (e) => e.preventDefault());
-
-// Handles:
-// - Add song buttons
-// - Custom drag to reorder
-// - Search for adding songs
-document.addEventListener("mousemove", (e) => {
-	// Search for adding songs
-	if (!mousedown && $(".overlay.search")[0]) {
-		target = e.target;
-		while (!target.classList.contains("song-tab")) {
-			if (target === document.body) return;
-			target = target.parentElement;
-		}
-
-		$(".overlay .playing")[0].classList.remove("playing");
-		target.classList.add("playing");
-	}
-
-	// Check if accidental-drag-click or actual drag
-	let draggingOneTime = false;
-	if (
-		mousedown &&
-		!dragging &&
-		Math.hypot(dragStartPos[0] - e.clientX, dragStartPos[1] - e.clientY) > 15
-	) {
-		dragging = draggingOneTime = true;
-	}
-
-	// Dragging visual setup
-	if (draggingOneTime) {
-		songTabClone.innerHTML = dragEls[1].innerHTML;
-		dragEls[1].classList.add("dragging");
-		songTabClone.classList.add("show");
-
-		if (dragEls[1].classList.contains("playing"))
-			songTabClone.classList.add("playing");
-		else songTabClone.classList.remove("playing");
-	}
-
-	// Custom drag to reorder
-	if (dragging) {
-		mousePos = [e.clientX, e.clientY];
-
-		const transX = mousePos[0] + dragCloneOffset[0];
-		const transY = mousePos[1] + dragCloneOffset[1];
-		songTabClone.style = `transform: translate(${transX}px, ${transY}px);`;
-		let bounds = queueEl.getBoundingClientRect();
-		bounds = [
-			bounds.x,
-			bounds.x + bounds.width,
-			bounds.y,
-			bounds.y + bounds.height,
-		];
-
-		if (mousePos[1] > bounds[2] + 175) {
-			dragOverrides[0] = false;
-		}
-		if (mousePos[1] < bounds[3] - 175) {
-			dragOverrides[1] = false;
-		}
-		if (dragStartPos[1] - 15 > mousePos[1]) {
-			dragOverrides[0] = false;
-		}
-		if (dragStartPos[1] + 15 < mousePos[1]) {
-			dragOverrides[1] = false;
-		}
-		if (mousePos[1] < bounds[2] || mousePos[1] > bounds[3]) {
-			dragOverrides = [false, false];
-		}
-
-		scrollQueue = 0;
-		if (mousePos[0] > bounds[0] - 100 && mousePos[0] < bounds[1] + 100) {
-			if (!dragOverrides[0]) {
-				if (mousePos[1] < bounds[2] + 175) {
-					scrollQueue = -1;
-				}
-				if (mousePos[1] < bounds[2] + 100) {
-					scrollQueue = -2;
-				}
-				if (mousePos[1] < bounds[2] + 25) {
-					scrollQueue = -4;
-				}
-				if (mousePos[1] < bounds[2]) {
-					scrollQueue = -15;
-				}
-			}
-			if (!dragOverrides[1]) {
-				if (mousePos[1] > bounds[3] - 175) {
-					scrollQueue = 1;
-				}
-				if (mousePos[1] > bounds[3] - 100) {
-					scrollQueue = 2;
-				}
-				if (mousePos[1] > bounds[3] - 25) {
-					scrollQueue = 4;
-				}
-				if (mousePos[1] > bounds[3]) {
-					scrollQueue = 15;
-				}
-			}
-
-			let droppable = [...$(".queue-container .song-divider")];
-			droppable.splice(droppable.indexOf(dragEls[0]), 1);
-			droppable = droppable.splice(
-				Math.max(0, Number.parseInt(queueEl.scrollTop / 71)),
-				10,
-			);
-			for (const el of droppable) {
-				if (Math.abs(el.getBoundingClientRect().y - e.clientY) < 25) {
-					queueEl.insertBefore(dragEls[0], el);
-					queueEl.insertBefore(dragEls[1], el);
-				}
-			}
-		}
-	} else {
-		// Show/hide add song button
-		let droppable = [...$(".queue-container .song-divider")];
-		droppable = droppable.splice(
-			Math.max(0, Number.parseInt(queueEl.scrollTop / 71)),
-			10,
-		);
-		for (const el of droppable) {
-			const withinWidth =
-				Math.abs(el.getBoundingClientRect().x + 150 - e.clientX) < 75;
-			const withinHeight =
-				Math.abs(el.getBoundingClientRect().y - e.clientY) < 25;
-			if (withinWidth && withinHeight) {
-				el.classList.add("mouseover");
-			} else {
-				el.classList.remove("mouseover");
-			}
-		}
-	}
-});
-
-document.addEventListener("mouseup", () => {
-	dragEls[1]?.classList.remove("dragging");
-	songTabClone.classList.remove("show");
-	mousedown = dragging = false;
-	scrollQueue = 0;
-});
-
-queueEl.addEventListener("mouseleave", () => {
-	for (const el of $(".queue-container .song-divider.mouseover")) {
-		el.classList.remove("mouseover");
 	}
 });
 
@@ -745,17 +515,20 @@ $(".nav .jump")[0].addEventListener("click", () => {
 });
 
 // -------------------- Playlist Editor --------------------
+const editorEl = $(".editor-container .editor")[0];
 
 // ----- Secondary Player -----
 const playBtn2 = $(".playlist-select-container .song-tab .pause-play")[0];
 const prevBtn2 = $(".playlist-select-container .song-tab .previous")[0];
 const nextBtn2 = $(".playlist-select-container .song-tab .next")[0];
-const YTPlaylistsEl = $(".playlist-select-container .youtube")[0];
-const localPlaylistsEl = $(".playlist-select-container .local")[0];
 
 playBtn2.addEventListener("click", () => playBtn.click());
 prevBtn2.addEventListener("click", () => prevBtn.click());
 nextBtn2.addEventListener("click", () => nextBtn.click());
+
+// ----- Playlist Selector -----
+const YTPlaylistsEl = $(".playlist-select-container .youtube")[0];
+const localPlaylistsEl = $(".playlist-select-container .local")[0];
 
 let popupAction;
 
@@ -764,7 +537,11 @@ function populatePlaylists() {
 		const playlistEl = $(`.playlist-select-container .${source}`)[0];
 		for (const el of [...playlistEl.children].slice(1)) el.remove();
 
-		for (const playlist of playlists[source]) {
+		const sortedPlaylistsByName = playlists[source].toSorted((a, b) =>
+			a.playlistName.localeCompare(b.playlistName),
+		);
+
+		for (const playlist of sortedPlaylistsByName) {
 			const div = document.createElement("div");
 			div.classList.add("playlist");
 			div.innerHTML = `<div class="name" data-playlist-id="${playlist.playlistId}">${playlist.playlistName}</div><div class="play"></div>`;
@@ -772,8 +549,7 @@ function populatePlaylists() {
 
 			div.addEventListener("click", (e) => {
 				if (e.target.classList.contains("play")) {
-					const i = [...playlistEl.children].indexOf(div) - 1;
-					populateSongList(playlists[source][i].songs, true);
+					populateSongList(playlist.songs, true);
 					$(".slider-container")[0].classList.add("active");
 				} else {
 					const editor = $(".editor-container .editor")[0];
@@ -786,8 +562,7 @@ function populatePlaylists() {
 						playlist.playlistName;
 					editor.children[1].style.marginTop = `${editor.children[0].clientHeight - 1}px`;
 
-					const i = [...playlistEl.children].indexOf(div) - 1;
-					populateSongList(playlists[source][i].songs, false);
+					populateSongList(playlist.songs, false);
 				}
 			});
 		}
@@ -868,7 +643,7 @@ async function addPlaylistAPI(inputData) {
 			playlistId = playlistId.at(-1).match(/[&?]list=([a-z0-9_-]+)/i)[1];
 		}
 
-		if (playlistId.length !== 34) {
+		if (![34, 43].includes(playlistId.length)) {
 			throw new Error("Invalid link or ID entered.");
 		}
 	}
@@ -908,6 +683,258 @@ async function addSongAPI(inputData) {
 	}
 }
 
+// -------------------- Dragging Functionality --------------------
+let mousedown = false;
+const dragging = [false, false];
+let dragElContainer = queueEl;
+let dragEls = [];
+let scrollQueue = 0;
+let dragStartPos = [];
+let dragCloneOffset = [0, 0];
+let mousePos = [0, 0];
+let dragOverrides = [false, false];
+const songTabClone = $(".song-tab.clone")[0];
+
+function mouseoverHandler(parentEl, e) {
+	dragElContainer = parentEl;
+	dragEls = e.target;
+	while (!dragEls.classList.contains("song-tab")) {
+		if (dragEls === parentEl) {
+			dragEls = [];
+			return;
+		}
+		dragEls = dragEls.parentElement;
+	}
+
+	// Context menu triggered
+	if (e.button === 2 || (e.button === 0 && e.ctrlKey)) {
+		// Options:
+		// - Delete
+		//   - Delete above (click+w)
+		//   - Delete below (click+s)
+		// - Shuffle
+		//   - Shuffle below playing (default [click], click+s)
+		//   - Shuffle and move playing to top (click+w)
+		// https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+		return;
+	}
+
+	mousedown = true;
+	dragStartPos = [e.clientX, e.clientY];
+	dragCloneOffset = [
+		dragEls.getBoundingClientRect().x - e.clientX,
+		dragEls.getBoundingClientRect().y - e.clientY,
+	];
+	dragEls = [
+		dragEls.previousElementSibling,
+		dragEls,
+		dragEls.nextElementSibling,
+	];
+
+	dragOverrides = [false, false];
+	let bounds = parentEl.getBoundingClientRect();
+	bounds = [
+		bounds.x,
+		bounds.x + bounds.width,
+		bounds.y,
+		bounds.y + bounds.height,
+	];
+	if (e.clientY < bounds[2] + 175) {
+		dragOverrides[0] = true;
+	}
+	if (e.clientY > bounds[3] - 175) {
+		dragOverrides[1] = true;
+	}
+}
+
+// Dragging initialization
+queueEl.addEventListener("mousedown", mouseoverHandler.bind(this, queueEl));
+editorEl.addEventListener("mousedown", mouseoverHandler.bind(this, editorEl));
+
+// Disable default context menu
+queueEl.addEventListener("contextmenu", (e) => e.preventDefault());
+editorEl.addEventListener("contextmenu", (e) => e.preventDefault());
+
+// Handles:
+// - Add song buttons
+// - Custom drag to reorder
+// - Search for adding songs
+document.addEventListener("mousemove", (e) => {
+	// Search for adding songs
+	if (!mousedown && $(".overlay.search")[0]) {
+		target = e.target;
+		while (!target.classList.contains("song-tab")) {
+			if (target.classList.contains("overlay")) return;
+			target = target.parentElement;
+		}
+
+		$(".overlay .playing")[0].classList.remove("playing");
+		target.classList.add("playing");
+	}
+
+	// Check if accidental-drag-click or actual drag
+	let draggingOneTime = false;
+	const editable =
+		!editorEl.classList.contains("library") &&
+		!editorEl.classList.contains("spotify") &&
+		!editorEl.classList.contains("youtube");
+	if (
+		mousedown &&
+		!dragging[0] &&
+		!dragging[1] &&
+		Math.hypot(dragStartPos[0] - e.clientX, dragStartPos[1] - e.clientY) > 15
+	) {
+		if (dragElContainer === queueEl) {
+			dragging[1] = draggingOneTime = true;
+		} else if (dragElContainer === editorEl && editable) {
+			dragging[0] = draggingOneTime = true;
+		}
+	}
+
+	// Dragging visual setup
+	if (draggingOneTime) {
+		songTabClone.innerHTML = dragEls[1].innerHTML;
+		dragEls[1].classList.add("dragging");
+		songTabClone.classList.add("show");
+
+		if (dragEls[1].classList.contains("playing"))
+			songTabClone.classList.add("playing");
+		else songTabClone.classList.remove("playing");
+	}
+
+	// Custom drag to reorder
+	if (dragging[0] || dragging[1]) {
+		mousePos = [e.clientX, e.clientY];
+
+		const transX = mousePos[0] + dragCloneOffset[0];
+		const transY = mousePos[1] + dragCloneOffset[1];
+		songTabClone.style = `transform: translate(${transX}px, ${transY}px);`;
+		let bounds = dragElContainer.getBoundingClientRect();
+		bounds = [
+			bounds.x,
+			bounds.x + bounds.width,
+			bounds.y,
+			bounds.y + bounds.height,
+		];
+
+		if (mousePos[1] > bounds[2] + 175) {
+			dragOverrides[0] = false;
+		}
+		if (mousePos[1] < bounds[3] - 175) {
+			dragOverrides[1] = false;
+		}
+		if (dragStartPos[1] - 15 > mousePos[1]) {
+			dragOverrides[0] = false;
+		}
+		if (dragStartPos[1] + 15 < mousePos[1]) {
+			dragOverrides[1] = false;
+		}
+		if (mousePos[1] < bounds[2] || mousePos[1] > bounds[3]) {
+			dragOverrides = [false, false];
+		}
+
+		scrollQueue = 0;
+		if (mousePos[0] > bounds[0] - 100 && mousePos[0] < bounds[1] + 100) {
+			if (!dragOverrides[0]) {
+				if (mousePos[1] < bounds[2] + 175) {
+					scrollQueue = -1;
+				}
+				if (mousePos[1] < bounds[2] + 100) {
+					scrollQueue = -2;
+				}
+				if (mousePos[1] < bounds[2] + 25) {
+					scrollQueue = -4;
+				}
+				if (mousePos[1] < bounds[2]) {
+					scrollQueue = -15;
+				}
+			}
+			if (!dragOverrides[1]) {
+				if (mousePos[1] > bounds[3] - 175) {
+					scrollQueue = 1;
+				}
+				if (mousePos[1] > bounds[3] - 100) {
+					scrollQueue = 2;
+				}
+				if (mousePos[1] > bounds[3] - 25) {
+					scrollQueue = 4;
+				}
+				if (mousePos[1] > bounds[3]) {
+					scrollQueue = 15;
+				}
+			}
+
+			let droppable;
+			if (dragElContainer === queueEl) {
+				droppable = [...$(".queue-container .song-divider")];
+			} else {
+				droppable = [...$(".editor-container .song-divider")];
+			}
+
+			droppable.splice(droppable.indexOf(dragEls[0]), 1);
+			droppable = binarySearchDroppable(droppable, dragElContainer);
+			for (const el of droppable) {
+				if (Math.abs(el.getBoundingClientRect().y - e.clientY) < 25) {
+					dragElContainer.insertBefore(dragEls[0], el);
+					dragElContainer.insertBefore(dragEls[1], el);
+				}
+			}
+		}
+	} else {
+		// Show/hide add song button
+		let droppable;
+		let parentEl;
+		if ($(".slider-container")[0].classList.contains("active")) {
+			droppable = [...$(".queue-container .song-divider")];
+			parentEl = queueEl;
+		} else if (editable) {
+			droppable = [...$(".editor-container .song-divider")];
+			parentEl = editorEl;
+		} else return;
+
+		droppable = binarySearchDroppable(droppable, parentEl);
+		for (const el of droppable) {
+			const withinWidth =
+				Math.abs(el.getBoundingClientRect().x + 150 - e.clientX) < 75;
+			const withinHeight =
+				Math.abs(el.getBoundingClientRect().y - e.clientY) < 25;
+			if (withinWidth && withinHeight) {
+				el.classList.add("mouseover");
+			} else {
+				el.classList.remove("mouseover");
+			}
+		}
+	}
+});
+
+function binarySearchDroppable(droppable, parentEl) {
+	const parentTop = parentEl.getBoundingClientRect().top - 25 / 2;
+	let low = 0;
+	let high = droppable.length - 1;
+	let center;
+	while (low + 1 !== high) {
+		center = Math.floor((low + high) / 2);
+		if (parentTop > droppable[center].getBoundingClientRect().bottom)
+			low = center;
+		else high = center;
+	}
+	const parentBottom = parentEl.getBoundingClientRect().bottom + 25 / 2;
+	while (
+		high < droppable.length &&
+		parentBottom > droppable[high].getBoundingClientRect().top
+	) {
+		high++;
+	}
+	return [...droppable].slice(low, high);
+}
+
+document.addEventListener("mouseup", () => {
+	dragEls[1]?.classList.remove("dragging");
+	songTabClone.classList.remove("show");
+	mousedown = dragging[0] = dragging[1] = false;
+	scrollQueue = 0;
+});
+
 // -------------------- Constantly Updating --------------------
 setInterval(() => {
 	// Update slider and time
@@ -925,7 +952,7 @@ setInterval(() => {
 
 setInterval(() => {
 	// Dragging functionality
-	if (!dragging || scrollQueue === 0) return;
+	if (!dragging[1] || scrollQueue === 0) return;
 	queueEl.scrollTop += scrollQueue * 10;
 
 	let droppable = [...$(".queue-container .song-divider")];

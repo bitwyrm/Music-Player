@@ -2,7 +2,7 @@
 .queue-container .queue {
   flex: 0 0 550px;
   width: 350px;
-  margin-left: 50px;
+  padding-left: 50px;
   overflow-y: auto;
   overflow-x: visible;
 }
@@ -123,7 +123,6 @@
 .editor-container .playlist-title,
 .queue-container .manual,
 .queue-container .auto {
-  width: 300px;
   padding: 10px 0;
   font-size: 18px;
   font-weight: bold;
@@ -134,8 +133,12 @@
   gap: 10px;
 }
 
-.editor-container .playlist-options {
+.queue-container .manual,
+.queue-container .auto {
   width: 300px;
+}
+
+.editor-container .playlist-options {
   display: none;
   align-items: center;
   justify-content: center;

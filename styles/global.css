@@ -106,6 +106,8 @@ kbd {
 .song-tab.playing {
   background-color: rgb(132, 0, 66);
   box-shadow: 0px 0px 20px 5px rgb(132, 0, 66);
+  /* Paint last */
+  filter: blur(0px);
 }
 
 .song-tab.dragging > * {

@@ -107,8 +107,7 @@ app.post("/add-playlist", async (req, res) => {
 
 app.post("/add-song", async (req, res) => {
 	try {
-		await addSong(req.body.id);
-		res.sendStatus(200);
+		res.send({ success: await addSong(req.body.id) });
 	} catch (error) {
 		console.log(error);
 		res.status(500).send(error);
@@ -131,10 +130,42 @@ app.post("/delete-song", async (req, res) => {
 	}
 });
 
+app.post("/spotify-access-granted", async (req, res) => {
+	console.log(req.body.token);
+	res.sendStatus(200);
+});
+
+app.post("/spotify-access-denied", async (req, res) => {
+	console.log("Access denied");
+	res.sendStatus(200);
+});
+
 app.get("/player", (_, res) => res.sendFile(`${dirname}/player.html`));
+app.get("/spotify-auth", (_, res) =>
+	res.send(`<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Spotify Authentication</title></head>
+<body><h1>Authentication</h1>This page will automatically close when authentication is complete.<script>
+try {
+fetch("/spotify-access-granted", {
+	method: "POST",
+	body: JSON.stringify({
+		token: window.location.hash
+			.slice(1)
+			.split("&")
+			.find((el) => el.startsWith("access_token="))
+			.slice(13),
+	}),
+	headers: {"Content-Type": "application/json"},
+}).then(() => window.close());
+} catch {fetch("/spotify-access-denied")}
+</script></body></html>`),
+);
+
 app.get("/favicon.ico", (_, res) =>
 	res.sendFile(`${dirname}/images/favicon.ico`),
 );
+
 app.get("/:file", (req, res) => res.sendFile(`${dirname}/${req.params.file}`));
 
 app.listen(80);

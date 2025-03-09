@@ -3,7 +3,6 @@ import {
 	cleanup,
 	downloadSong,
 	forceFixLibrary,
-	// getAltSources,
 	getForceMap,
 	getLibrary,
 	getSavedPlaylists,
@@ -17,9 +16,9 @@ import {
 export async function syncYoutubePlaylists(playlistId) {
 	const playlists = getSavedPlaylists();
 	const playlistIds = playlists.youtube.map((el) => el.playlistId);
-  
+
 	console.log("Fetching YouTube playlists");
-	let songsDict;
+	let songsDict = {};
 	const playlistsName = [];
 	const playlistsSongs = [];
 	if (playlistId) {
@@ -28,16 +27,10 @@ export async function syncYoutubePlaylists(playlistId) {
 		playlistsName.push(data.playlistName);
 		playlistsSongs.push(data.songs);
 	} else {
-		let first = true;
 		for (const currPlaylistId of playlistIds) {
 			const data = await getYTPlaylist(currPlaylistId);
-			if (first) {
-				first = false;
-				songsDict = data.songsDict;
-			} else {
-				for (const id in data.songsDict) {
-					songsDict[id] = data.songsDict[id];
-				}
+			for (const id in data.songsDict) {
+				songsDict[id] = data.songsDict[id];
 			}
 			playlistsName.push(data.playlistName);
 			playlistsSongs.push(data.songs);
@@ -48,11 +41,11 @@ export async function syncYoutubePlaylists(playlistId) {
 	// Force mappings
 	console.log("Applying force mappings");
 	const forceMap = getForceMap();
-	for (let i = 0; i < playlistsSongs.length; i++) {
-		for (let j = 0; j < playlistsSongs[i].length; j++) {
-			if (playlistsSongs[i][j] in forceMap) {
-				const mappedId = forceMap[playlistsSongs[i][j]];
-				playlistsSongs[i][j] = mappedId;
+	for (const selectedPlaylist of playlistsSongs) {
+		for (let j = 0; j < selectedPlaylist.length; j++) {
+			if (selectedPlaylist[j] in forceMap) {
+				const mappedId = forceMap[selectedPlaylist[j]];
+				selectedPlaylist[j] = mappedId;
 				if (!(mappedId in songsDict) && !(mappedId in library)) {
 					songsDict[mappedId] = await getYTSong(mappedId);
 				}
@@ -60,18 +53,19 @@ export async function syncYoutubePlaylists(playlistId) {
 		}
 	}
 
-	const songs = [...new Set(playlistsSongs.flat(1))];
-	for (let i = songs.length - 1; i >= 0; i--) {
-		if (songs[i] in library) songs.splice(songs.indexOf(songs[i]), 1);
-	}
+	const songs = [
+		...new Set(playlistsSongs.flat(1)).difference(
+			new Set(Object.keys(library)),
+		),
+	];
 	await forceFixLibrary(songs, library, songsDict, forceMap);
 
 	console.log(`${songs.length} songs to download`);
 	let [addToLibrary, failedSongs] = await downloadSongList(songs);
 
 	for (let i = 0; i < playlistsSongs.length; i++) {
-		playlistsSongs[i] = playlistsSongs[i].filter((song) =>
-			!failedSongs.includes(song),
+		playlistsSongs[i] = playlistsSongs[i].filter(
+			(song) => !failedSongs.includes(song),
 		);
 	}
 
@@ -82,12 +76,11 @@ export async function syncYoutubePlaylists(playlistId) {
 	console.log("Library updated.");
 
 	if (playlistId) {
-		const i = playlists.youtube.findIndex((el) => el.playlistId === playlistId);
-		playlists.youtube[i] = {
-			playlistId: playlistId,
-			playlistName: playlistsName[0],
-			songs: playlistsSongs[0],
-		};
+		const playlist = playlists.youtube.find(
+			(el) => el.playlistId === playlistId,
+		);
+		playlist.playlistName = playlistsName[0];
+		playlist.songs = playlistsSongs[0];
 	} else {
 		playlists.youtube = playlistsSongs.map((playlist, i) => {
 			return {
@@ -104,8 +97,7 @@ export async function syncYoutubePlaylists(playlistId) {
 
 	if (failedSongs.length > 0) {
 		failedSongs = failedSongs.map((el) => {
-			el.id = `https://www.youtube.com/watch?v=${el.id}`;
-			return el;
+			return `https://www.youtube.com/watch?v=${el}`;
 		});
 		reportFailed(failedSongs);
 	}

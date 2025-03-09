@@ -2,6 +2,8 @@
   "type": "module",
   "dependencies": {
     "express": "^4.19.2",
-    "yt-dlp-wrap": "^2.3.12"
+    "spotify-web-api-node": "^5.0.2",
+    "yt-dlp-wrap": "^2.3.12",
+    "ytmusic-api": "^5.2.2"
   }
 }

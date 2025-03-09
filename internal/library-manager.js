@@ -57,10 +57,7 @@ export async function getYTPlaylist(playlist) {
 	};
 }
 
-export async function downloadSong(id, renameId) {
-	let filename;
-	if (renameId === undefined) filename = id;
-	else filename = renameId;
+export async function downloadSong(id) {
 
 	try {
 		await ytDlpWrap.execPromise([
@@ -82,20 +79,28 @@ export async function downloadSong(id, renameId) {
 			`https://www.youtube.com/watch?v=${id}`,
 		]);
 
-		fs.rename(`internal/temp/${id}.mp3`, `audios/${filename}.mp3`, (err) => {
-			if (err) throw err;
-		});
+		if (
+			fs.existsSync(`internal/temp/${id}.mp3`) &&
+			fs.existsSync(`internal/temp/${id}.webp`)
+		) {
+			fs.rename(
+				`internal/temp/${id}.mp3`,
+				`audios/${id}.mp3`,
+				(err) => {},
+			);
 
-		fs.rename(
-			`internal/temp/${id}.webp`,
-			`thumbnails/${filename}.webp`,
-			(err) => {
-				if (err) throw err;
-			},
-		);
+			fs.rename(
+				`internal/temp/${id}.webp`,
+				`thumbnails/${id}.webp`,
+				(err) => {},
+			);
+		} else {
+			throw new Error("Failed to download. Unstable connection or WEBP thumbnail not available.");
+		}
+
 		return true;
 	} catch (error) {
-		console.log(error.message.split("\n")[6]);
+		console.log(error.message.split("\n")[6] || error.message);
 		return false;
 	}
 }
@@ -188,6 +193,9 @@ export function saveLibrary(library) {
 		if (library[id].song.startsWith(artistStr)) {
 			library[id].song = library[id].song.slice(artistStr.length);
 		}
+		if (library[id].song.endsWith(artistStr)) {
+			library[id].song = library[id].song.slice(0, -artistStr.length);
+		}
 	}
 
 	sortLibrary(library);
@@ -238,11 +246,16 @@ export async function addSong(id) {
 	const videoDet = await getYTSong(id);
 	// biome-ignore lint/performance/noDelete: don't care enough
 	delete videoDet.id;
-	await downloadSong(id);
-	library[id] = videoDet;
-	saveLibrary(library);
-	console.log("Library updated.");
+	const successful = await downloadSong(id);
 	cleanup();
+	if (successful) {
+		library[id] = videoDet;
+		saveLibrary(library);
+		console.log("Library updated.");
+		return true;
+	}
+	console.log("Download failed.");
+	return false;
 }
 
 export function deleteSong(id) {
