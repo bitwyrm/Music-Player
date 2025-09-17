@@ -163,22 +163,22 @@ Build a fully autonomous, self-hosted music discovery and recommendation pipelin
 
 ```mermaid
 flowchart TD
-  A[Seed Artist List from Local Library] --> B[Generate YouTube Queries (fans of + keywords)]
-  B --> C[YouTube Search (date + duration filters)]
-  C --> D[Fetch View Counts]
+  A(Seed Artist List from Local Library) --> B(Generate YouTube Queries (fans of + keywords))
+  B --> C(YouTube Search (date + duration filters))
+  C --> D(Fetch View Counts)
   D --> E{View Count < Threshold?}
-  E -- No --> F[Discard Video]
-  E -- Yes --> G[Embed Metadata]
+  E -- No --> F(Discard Video)
+  E -- Yes --> G(Embed Metadata)
   G --> H{Similarity > Threshold?}
   H -- No --> F
-  H -- Yes --> I[Download Audio (yt-dlp) to Temp Folder]
-  I --> J[Extract Audio Features & Embed]
-  J --> K[Add to Vector DB (Temp)]
-  K --> L[User Listen Tracking]
+  H -- Yes --> I(Download Audio (yt-dlp) to Temp Folder)
+  I --> J(Extract Audio Features & Embed)
+  J --> K(Add to Vector DB (Temp))
+  K --> L(User Listen Tracking)
   L --> M{Played?}
-  M -- Yes --> N[Move to Permanent Library & Mark Embedding Permanent]
-  M -- No --> O[Keep in Temp Folder Until 60 Days]
-  O --> P[Cleanup & Delete Old Unplayed Songs]
+  M -- Yes --> N(Move to Permanent Library & Mark Embedding Permanent)
+  M -- No --> O(Keep in Temp Folder Until 60 Days)
+  O --> P(Cleanup & Delete Old Unplayed Songs)
 ```
 
 ---
