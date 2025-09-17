@@ -219,7 +219,7 @@ Using SQLite for persistent storage. Below are the core tables and their relatio
 
 ### 11.1 Song Metadata JSON (frontend/backend communication)
 
-!!!
+```
 {
   "internal_id": "song12345",
   "spotify_id": "spotify:track:xyz",
@@ -238,13 +238,13 @@ Using SQLite for persistent storage. Below are the core tables and their relatio
   ],
   "date_added": "2024-08-10T12:00:00Z"
 }
-!!!
+```
 
 ---
 
 ### 11.2 Playlist JSON (frontend/backend communication)
 
-!!!
+```
 {
   "playlist_id": "PL123456",
   "name": "Standard Playlist",
@@ -256,13 +256,13 @@ Using SQLite for persistent storage. Below are the core tables and their relatio
   "date_created": "2024-08-10T12:00:00Z",
   "is_original": true
 }
-!!!
+```
 
 ---
 
 ### 11.3 User Metadata Sync JSON
 
-!!!
+```
 {
   "user_id": "user123",
   "play_counts": {
@@ -284,7 +284,7 @@ Using SQLite for persistent storage. Below are the core tables and their relatio
     }
   }
 }
-!!!
+```
 
 ---
 
@@ -352,7 +352,7 @@ Using SQLite for persistent storage. Below are the core tables and their relatio
   **Description:** Generate a playlist based on user parameters  
   **Request Body Example:**
 
-!!!
+```
 {
   "moods": [
     { "name": "chill", "weight": 0.6 },
@@ -364,7 +364,7 @@ Using SQLite for persistent storage. Below are the core tables and their relatio
   "include_popular": true,
   "seed_songs": ["song12345"]
 }
-!!!
+```
 
 - **Response:** Playlist JSON with generated ordered song list  
 
@@ -658,12 +658,12 @@ Using SQLite for persistent storage. Below are the core tables and their relatio
 
 - Get user playlists:
 
-  !!!sql
+  ```sql
   SELECT playlist_id, name FROM playlists WHERE user_id = ?;
 
 - Get songs in playlist ordered:
 
-  !!!sql
+  ```sql
   SELECT s.* FROM songs s
   JOIN playlist_songs ps ON s.song_id = ps.song_id
   WHERE ps.playlist_id = ?
@@ -671,7 +671,7 @@ Using SQLite for persistent storage. Below are the core tables and their relatio
 
 - Update play count:
 
-  !!!sql
+  ```sql
   INSERT INTO user_playcounts (user_id, song_id, play_count, last_played_at)
   VALUES (?, ?, ?, CURRENT_TIMESTAMP)
   ON CONFLICT(user_id, song_id) DO UPDATE SET
